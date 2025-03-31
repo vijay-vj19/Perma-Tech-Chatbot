@@ -3,6 +3,10 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 import pandas as pd
 import altair as alt
+import pandas as pd
+from prophet import Prophet
+import matplotlib.pyplot as plt 
+
 
 def predict_and_plot_lists(data_list1, data_list2, data_list3=None, x_labels=None, y_label1="Values1", y_label2="Values2", y_label3="Values3"):
     """Predicts and plots two or three lists using st.altair_chart with dual y-axis and custom y-axis labels, with automatic offset."""
@@ -108,4 +112,91 @@ def predict_and_plot_lists(data_list1, data_list2, data_list3=None, x_labels=Non
         layered_chart = alt.layer(bar_chart, line_chart1, line_chart2).resolve_scale(y='independent')
 
     # Display the Altair chart in Streamlit
+    st.altair_chart(layered_chart, use_container_width=True)
+
+def plot_prophet_forecast(
+    data_list1, data_list2, data_list3=None, x_labels=None,
+    y_label1="Loan Count", y_label2="UPB Value", y_label3="Total Revenue"
+):
+
+    # Prepare Data for Prophet Predictions
+    def prepare_prophet_data(data_list):
+        df = pd.DataFrame({
+            "ds": pd.date_range(start="2021-03-31", periods=len(data_list), freq="Q"),
+            "y": data_list
+        })
+        return df
+
+    def get_prophet_forecast(data_list):
+        if len(data_list) == 0:
+            return None, None
+        df = prepare_prophet_data(data_list)
+        model = Prophet()
+        model.fit(df)
+        future = model.make_future_dataframe(periods=1, freq="Q")
+        forecast = model.predict(future)
+        predicted_value = forecast.iloc[-1]["yhat"]
+        return forecast, predicted_value
+
+    # Get Prophet Forecasts
+    forecast1, predicted_value1 = get_prophet_forecast(data_list1)
+    forecast2, predicted_value2 = get_prophet_forecast(data_list2)
+
+    # Handle x-axis labels
+    if x_labels is None:
+        labels = list(range(len(data_list1))) + ["Predicted"]
+    else:
+        labels = x_labels + ["Predicted"]
+
+    data1 = np.append(data_list1, predicted_value1)
+    data2 = np.append(data_list2, predicted_value2)
+
+    # Create DataFrame for Altair with predictions
+    df = pd.DataFrame({
+        "Data Points": labels,
+        y_label1: data1,
+        y_label2: data2
+    })
+
+    # Automatically calculate offset for y2
+    offset_y2 = (max(data1) - min(data1)) * 0.1  # 10% of the range of data1
+    df['offset_y2'] = df[y_label2] + offset_y2
+
+    # Altair Charts 
+    bar_chart = alt.Chart(df).mark_bar().encode(
+        x="Data Points:O",
+        y=f"{y_label1}:Q",
+        color=alt.condition(
+            alt.datum["Data Points"] == "Predicted",
+            alt.value("#e74c3c"),  # Predicted in red
+            alt.value("#3498db")  # Original values in blue
+        )
+    )
+
+    line_chart1 = alt.Chart(df).mark_line(color="orange").encode(
+        x="Data Points:O",
+        y=alt.Y('offset_y2:Q', axis=alt.Axis(title=f"{y_label2} (Secondary Axis)", titleColor="orange"))
+    )
+
+    layered_chart = alt.layer(bar_chart, line_chart1).resolve_scale(y='independent')
+
+    # Add Revenue Predictions If Available
+    if data_list3 is not None:
+        forecast3, predicted_value3 = get_prophet_forecast(data_list3)
+        data3 = np.append(data_list3, predicted_value3)
+        df[y_label3] = data3
+
+        # Automatically calculate offset for y3
+        offset_y3 = (max(data1) - min(data1)) * 0.2  # 20% offset for Revenue
+        df['offset_y3'] = df[y_label3] + offset_y3
+
+        line_chart2 = alt.Chart(df).mark_line(color="green").encode(
+            x="Data Points:O",
+            y=alt.Y('offset_y3:Q', axis=alt.Axis(title=f"{y_label3} (Tertiary Axis)", titleColor="green"))
+        )
+
+        # Combine Loan, UPB, and Revenue Charts
+        layered_chart = alt.layer(bar_chart, line_chart1, line_chart2).resolve_scale(y='independent')
+
+    # Display the Altair chart in Streamlit 
     st.altair_chart(layered_chart, use_container_width=True)

@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-from app.plots.barchart_utils import predict_and_plot_lists
-from RAG.chatbot import get_answer 
+from app.plots.barchart_utils import predict_and_plot_lists, plot_prophet_forecast
+from RAG.chatbot import get_answer
 
 
 def main():
@@ -89,11 +89,47 @@ def main():
 
     predict_and_plot_lists(Loan,Asset_Mgmt,Portfolio_Mgmt,pccp_lable,"Loan","Asset Management","Portfolio Management")
 
+    try:
+        # Load Portfolio Trend sheet
+        file_path = "resources/Preprocessed.xlsx"
+        sheet_name = "Portfolio Trend"
+        portfolio_data = pd.read_excel(file_path, sheet_name=sheet_name)
 
+        # === Call the new Prophet function at the end ===
+        plot_prophet_predictions(portfolio_data, pccp_lable)
+
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+
+
+# Call Prophet Model
+def plot_prophet_predictions(portfolio_data, pccp_lable):
     
-
-
+    # Extract data for Prophet predictions
+    loan_data = portfolio_data.loc[portfolio_data["Period"] == "Loan"].values.flatten()[1:]
+    upb_data = portfolio_data.loc[portfolio_data["Period"] == "UPB"].values.flatten()[1:]
+    total_revenue_data = portfolio_data.loc[portfolio_data["Period"] == "Total Revenue (excl. IOD)"].values.flatten()[1:]
+    rev_loan_data = portfolio_data.loc[portfolio_data["Period"] == "Rev/Loan"].values.flatten()[1:]
+    asset_mgmt_data = portfolio_data.loc[portfolio_data["Period"] == "Asset Mgmt"].values.flatten()[1:]
+    portfolio_mgmt_data = portfolio_data.loc[portfolio_data["Period"] == "Portfolio Mgmt"].values.flatten()[1:]
+    
+    # Plot Prophet predictions
+    st.subheader(" Prophet Forecast for Loan Count")
+    plot_prophet_forecast(
+    loan_data, upb_data, None, x_labels=pccp_lable,
+    y_label1="Loan Count", y_label2="UPB Value", y_label3=None
+)
+    st.subheader(" Prophet Forecast for Total Revenue")
+    plot_prophet_forecast(
+    total_revenue_data, rev_loan_data, None, x_labels=pccp_lable,
+    y_label1="Total Revenue", y_label2="Rev/Loan", y_label3=None
+)    
+    st.subheader(" Prophet Forecast for UPB")
+    plot_prophet_forecast(
+    upb_data, loan_data, None, x_labels=pccp_lable,
+    y_label1="UPB Value", y_label2="Loan", y_label3=None
+)
 
 
 if __name__ == "__main__":
-    main()
+   main()
