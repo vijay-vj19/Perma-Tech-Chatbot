@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 from app.plots.barchart_utils import predict_and_plot_lists
 from RAG.chatbot import get_answer 
+from auth import login_form, logout_button
+
+
+
 
 
 def main():
@@ -9,6 +13,16 @@ def main():
     Main function to structure the Streamlit app with a sidebar chatbot and main page dashboard.
     """
 
+
+    # Initialize session state
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    if not st.session_state["authenticated"]:
+        login_form()
+        return  # Skip rest of app if not logged in
+
+    
     # Sidebar for Chatbot
     st.markdown(
     """
@@ -37,10 +51,10 @@ def main():
                     st.markdown(message["content"])
 
         # Create an empty container for the input field
-        input_container = st.empty()
+        # input_container = st.empty()
 
         # Place the input field in the container
-        if prompt := input_container.chat_input("Ask me about the dashboard?"):
+        if prompt := st.chat_input("Ask me about the dashboard?"):
             # Display user message in chat message container
             st.chat_message("user").markdown(prompt)
             # Add user message to chat history
@@ -55,6 +69,7 @@ def main():
 
             # Force a re-render to ensure correct placement
             st.rerun()
+
 
     # Main page for Dashboard
     st.header("Dashboard")
@@ -87,13 +102,12 @@ def main():
     Asset_Mgmt = df.iloc[5][1:].tolist()
     Portfolio_Mgmt = df.iloc[6][1:].tolist()
 
-    predict_and_plot_lists(Loan,Asset_Mgmt,Portfolio_Mgmt,pccp_lable,"Loan","Asset Management","Portfolio Management")
+    predict_and_plot_lists(Loan,Asset_Mgmt,None,pccp_lable,"Loan","Asset Management",None)
 
-
-    
 
 
 
 
 if __name__ == "__main__":
     main()
+    

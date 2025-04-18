@@ -41,9 +41,9 @@ def predict_and_plot_lists(data_list1, data_list2, data_list3=None, x_labels=Non
     predicted_value2 = model2.predict(next_X2)[0]
 
     if x_labels is None:
-        labels = list(range(len(values1))) + ["Predicted"]
+        labels = list(range(len(values1))) + ["Predicted 2023 Q2"]
     else:
-        labels = x_labels + ["Predicted"]
+        labels = x_labels + ["Predicted 2023 Q2"]
 
     data1 = np.append(values1, predicted_value1)
     data2 = np.append(values2, predicted_value2)
@@ -64,7 +64,7 @@ def predict_and_plot_lists(data_list1, data_list2, data_list3=None, x_labels=Non
         x="Data Points:O",
         y=f"{y_label1}:Q",
         color=alt.condition(
-            alt.datum["Data Points"] == "Predicted",
+            alt.datum["Data Points"] == "Predicted 2023 Q2",
             alt.value("#e74c3c"),
             alt.value("#3498db")
         )
