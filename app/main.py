@@ -77,7 +77,7 @@ def main():
     st.subheader("PCCP")
 
     #preprocessing data
-    file_path = r"resources\Preprocessed.xlsx"
+    file_path = r"resources/Preprocessed.xlsx"
     sheet_name = "Portfolio Trend"
 
     df = pd.read_excel(file_path, sheet_name=sheet_name,header=None)
