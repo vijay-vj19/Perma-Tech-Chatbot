@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from plots.barchart_utils import predict_and_plot_lists
-from app.RAG.chatbot import get_answer 
+from RAG.chatbot import get_answer 
 from auth import login_form, logout_button
 
 
